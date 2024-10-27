@@ -19,7 +19,7 @@ func (t Trade) MarshalBinary() ([]byte, error) {
 	return json.Marshal(t)
 }
 
-// Define a struct to match the incoming JSON structure
+// Binance incoming trade data
 type BinanceTrade struct {
 	Event        string `json:"e"`
 	EventTime    int64  `json:"E"`
@@ -30,4 +30,19 @@ type BinanceTrade struct {
 	TradeTime    int64  `json:"T"`
 	IsBuyerMaker bool   `json:"m"`
 	Ignore       bool   `json:"M"`
+}
+
+// Kraken incoming trade data
+type KrakenTradeMessage struct {
+	Channel string `json:"channel"`
+	Type    string `json:"type"`
+	Data    []struct {
+		Symbol    string  `json:"symbol"`
+		Side      string  `json:"side"`
+		Price     float64 `json:"price"`
+		Quantity  float64 `json:"qty"`
+		OrderType string  `json:"ord_type"`
+		TradeID   int64   `json:"trade_id"`
+		Timestamp string  `json:"timestamp"`
+	} `json:"data"`
 }

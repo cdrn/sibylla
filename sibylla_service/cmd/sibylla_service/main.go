@@ -40,7 +40,13 @@ func main() {
 		RedisClient:      redisClient,
 	}
 
+	krakenConfig := exchangeconfig.Config{
+		ConnectionString: getEnv("KRAKEN_WEBSOCKET_URL", ""),
+		RedisClient:      redisClient,
+	}
+
 	go exchange.ConnectBinanceWebSocket(binanceConfig)
+	go exchange.ConnectKrakenWebSocket(krakenConfig)
 
 	// start server
 	log.Printf("Server starting on port %s", port)
