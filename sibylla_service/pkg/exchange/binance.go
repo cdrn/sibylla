@@ -1,11 +1,14 @@
 package exchange
 
 import (
+	"encoding/json"
 	"log"
 	"net/url"
 	"os"
 	"os/signal"
 	exchangeconfig "sibylla_service/pkg/config"
+	trade "sibylla_service/pkg/models"
+	"strconv"
 	"time"
 
 	"github.com/gorilla/websocket"
@@ -33,20 +36,46 @@ func ConnectBinanceWebSocket(config exchangeconfig.Config) {
 
 	// Start a goroutine to read messages from the WebSocket
 	go func() {
-		defer close(done) // Close the done channel when the goroutine exits
+		// Defer executes after function completion. close socket.
+		defer close(done)
 		for {
-			_, message, err := c.ReadMessage() // Read a message from the WebSocket
+			_, message, err := c.ReadMessage()
 			if err != nil {
 				log.Println("read:", err)
 				return
 			}
-			log.Printf("recv: %s", message) // Log the received message
+			// Log every trade for now.
+			log.Printf("recv: %s", message)
+
+			// Unpack the trade message into the BinanceTrade struct
+			var binanceTrade trade.BinanceTrade
+			err = json.Unmarshal(message, &binanceTrade)
+			if err != nil {
+				log.Printf("Could not unmarshal trade message: %v", err)
+				continue
+			}
+
+			// Map BinanceTrade to the Trade struct
+			tradeData := trade.Trade{
+				Exchange:     "binance",
+				Pair:         binanceTrade.Symbol,
+				Price:        func() float64 { p, _ := strconv.ParseFloat(binanceTrade.Price, 64); return p }(),
+				Quantity:     func() float64 { q, _ := strconv.ParseFloat(binanceTrade.Quantity, 64); return q }(),
+				Timestamp:    binanceTrade.TradeTime,
+				IsBuyerMaker: binanceTrade.IsBuyerMaker,
+			}
+
+			// Push the trade struct into redis
+			err = config.RedisClient.PushToList("BTC/USDT", tradeData, 100)
+			if err != nil {
+				log.Printf("Could not push trade to Redis: %v", err)
+			}
 		}
 	}()
 
 	for {
 		select {
-		case <-done: // If the done channel is closed, exit the loop
+		case <-done: // Exit the loop on done sig
 			return
 		case <-interrupt: // If an interrupt signal is received
 			log.Println("interrupt")
