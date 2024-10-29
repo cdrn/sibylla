@@ -27,11 +27,11 @@ jobs:
         working-directory: sibylla_service
 
       - name: Build binary
-        run: GOOS=linux GOARCH=amd64 go build -o sibylla ./cmd
+        run: GOOS=linux GOARCH=amd64 go build -o sibylla ./cmd/sibylla_service
         working-directory: sibylla_service
 
       - name: Copy static files
-        run: mkdir -p static && cp -r static ./static/
+        run: mkdir -p static_copy && cp -r static/* static_copy/
         working-directory: sibylla_service
 
   deploy:
