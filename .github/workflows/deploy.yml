@@ -45,8 +45,13 @@ jobs:
           host: ${{ secrets.DO_DROPLET_IP }}
           username: ${{ secrets.DO_SSH_USER }}
           key: ${{ secrets.DO_SSH_KEY }}
-          source: "./sibylla_service ./sibylla_service/static/"
+          source: "./sibylla_service/* ./sibylla_service/static/*"
           target: "/root/"
+          port: 22
+          timeout: 30s
+          command_timeout: 1m
+          strip_components: 0
+          overwrite: false
 
       - name: Restart service on Droplet
         uses: appleboy/ssh-action@master
