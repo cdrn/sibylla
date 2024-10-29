@@ -27,7 +27,7 @@ jobs:
         working-directory: sibylla_service
 
       - name: Build binary
-        run: GOOS=linux GOARCH=amd64 go build -o sibylla
+        run: GOOS=linux GOARCH=amd64 go build -o sibylla ./cmd
         working-directory: sibylla_service
 
       - name: Copy static files
@@ -45,7 +45,7 @@ jobs:
           host: ${{ secrets.DO_DROPLET_IP }}
           username: ${{ secrets.DO_SSH_USER }}
           key: ${{ secrets.DO_SSH_KEY }}
-          source: "./sibylla_service ./static/"
+          source: "./sibylla_service ./sibylla_service/static/"
           target: "/root/"
 
       - name: Restart service on Droplet
