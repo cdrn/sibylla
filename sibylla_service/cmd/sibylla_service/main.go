@@ -13,8 +13,17 @@ import (
 
 	"sibylla_service/pkg/models"
 
+	"time"
+
+	"github.com/gorilla/websocket"
 	"github.com/joho/godotenv"
 )
+
+var upgrader = websocket.Upgrader{
+	CheckOrigin: func(r *http.Request) bool {
+		return true
+	},
+}
 
 func main() {
 
@@ -32,12 +41,13 @@ func main() {
 		0,                // use default Redis database (DB 0)
 	)
 
-	// load environment variables or configs
+	// ENVS //
 	port := getEnv("PORT", "8080")
 
-	// initialize routes and handlers
+	// ROUTES //
 	http.HandleFunc("/", homeHandler)
 	http.HandleFunc("/trades", tradesHandler(redisClient))
+	http.HandleFunc("/ws", websocketHandler(redisClient))
 
 	// Initialize exchange listeners
 	binanceConfig := exchangeconfig.Config{
@@ -88,9 +98,9 @@ func tradesHandler(redisClient *redisclient.RedisClient) http.HandlerFunc {
 		arbOpportunity := binancePrice - krakenPrice
 
 		response := map[string]interface{}{
-			"binance":        tradesBinance,
-			"kraken":         tradesKraken,
-			"arbOpportunity": arbOpportunity,
+			"binance": tradesBinance,
+			"kraken":  tradesKraken,
+			"delta":   arbOpportunity,
 		}
 
 		responseJSON, err := json.Marshal(response)
@@ -101,6 +111,53 @@ func tradesHandler(redisClient *redisclient.RedisClient) http.HandlerFunc {
 
 		w.Header().Set("Content-Type", "application/json")
 		w.Write(responseJSON)
+	}
+}
+
+func websocketHandler(redisClient *redisclient.RedisClient) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		conn, err := upgrader.Upgrade(w, r, nil)
+		if err != nil {
+			log.Printf("Failed to upgrade connection: %v", err)
+			return
+		}
+		defer conn.Close()
+
+		for {
+			// Fetch the latest trade data
+			tradesBinance, err := redisClient.GetList("trades:binance:BTC/USDT", 1)
+			if err != nil || len(tradesBinance) == 0 {
+				log.Printf("No binance trades found")
+				tradesBinance = []string{"{\"Price\":0}"}
+			}
+
+			tradesKraken, err := redisClient.GetList("trades:kraken:BTC/USD", 1)
+			if err != nil || len(tradesKraken) == 0 {
+				log.Printf("No kraken trades found")
+				tradesKraken = []string{"{\"Price\":0}"}
+			}
+
+			binancePrice := parseTradePrice(tradesBinance[0])
+			krakenPrice := parseTradePrice(tradesKraken[0])
+
+			arbOpportunity := krakenPrice - binancePrice
+
+			response := map[string]interface{}{
+				"binance":        tradesBinance,
+				"kraken":         tradesKraken,
+				"arbOpportunity": arbOpportunity,
+			}
+
+			// Send the data to the client
+			err = conn.WriteJSON(response)
+			if err != nil {
+				log.Printf("Error writing JSON to WebSocket: %v", err)
+				break
+			}
+
+			// Wait for a short period before sending the next update
+			time.Sleep(1 * time.Second)
+		}
 	}
 }
 

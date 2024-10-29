@@ -63,8 +63,6 @@ func ConnectKrakenWebSocket(config exchangeconfig.Config) {
 				log.Println("read:", err)
 				return
 			}
-			// Log every trade for now.
-			log.Printf("kraken recv: %s", message)
 
 			// Unpack the trade message into the KrakenTrade struct
 			var krakenTrade trade.KrakenTradeMessage
