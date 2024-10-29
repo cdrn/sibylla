@@ -4,19 +4,32 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Real-Time Price Dashboard</title>
+    <style>
+        .flash {
+            animation: flash-animation 0.5s ease-in-out;
+        }
+
+        @keyframes flash-animation {
+            0% { background-color: yellow; }
+            100% { background-color: transparent; }
+        }
+    </style>
 </head>
 <body>
     <h1>Arbitrage Dashboard</h1>
+    <h2>btc/USD(T)</h2>
     <div>binance latest trade: <span id="priceBinance">Loading...</span></div>
+    <br>
     <div>kraken latest trade: <span id="priceKraken">Loading...</span></div>
+    <br>
     <div>delta: <span id="delta">Loading...</span></div>
 
     <script>
         async function fetchData() {
             const response = await fetch('/api/trades');
             const data = await response.json();
-            document.getElementById('priceBinance').textContent = formatTradeData(data.binance[0]);
-            document.getElementById('priceKraken').textContent = formatTradeData(data.kraken[0]);
+            updateElement('priceBinance', formatTradeData(data.binance[0]));
+            updateElement('priceKraken', formatTradeData(data.kraken[0]));
             const deltaElement = document.getElementById('delta');
             deltaElement.textContent = data.delta;
             deltaElement.style.color = data.delta >= 0 ? 'green' : 'red';
@@ -25,6 +38,17 @@
         function formatTradeData(trade) {
             const tradeObj = JSON.parse(trade);
             return `Exchange: ${tradeObj.Exchange}\nPair: ${tradeObj.Pair}\nPrice: ${tradeObj.Price}\nQuantity: ${tradeObj.Quantity}\nTimestamp: ${tradeObj.Timestamp}\nIsBuyerMaker: ${tradeObj.IsBuyerMaker}`;
+        }
+
+        function updateElement(id, newValue) {
+            const element = document.getElementById(id);
+            if (element.textContent !== newValue) {
+                element.textContent = newValue;
+                element.classList.add('flash');
+                setTimeout(() => {
+                    element.classList.remove('flash');
+                }, 500);
+            }
         }
 
         setInterval(fetchData, 500);
