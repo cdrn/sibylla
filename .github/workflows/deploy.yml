@@ -20,15 +20,19 @@ jobs:
 
       - name: Install dependencies
         run: go mod download
+        working-directory: sibylla_service
 
       - name: Run tests
         run: go test ./...
+        working-directory: sibylla_service
 
       - name: Build binary
         run: GOOS=linux GOARCH=amd64 go build -o myapp
+        working-directory: sibylla_service
 
       - name: Copy static files
         run: mkdir -p static && cp -r static ./static/
+        working-directory: sibylla_service
 
   deploy:
     runs-on: ubuntu-latest
@@ -41,7 +45,7 @@ jobs:
           host: ${{ secrets.DO_DROPLET_IP }}
           username: ${{ secrets.DO_SSH_USER }}
           key: ${{ secrets.DO_SSH_KEY }}
-          source: "./myapp ./static/"
+          source: "./sibylla_service ./static/"
           target: "/root/"
 
       - name: Restart service on Droplet
@@ -51,4 +55,4 @@ jobs:
           username: ${{ secrets.DO_SSH_USER }}
           key: ${{ secrets.DO_SSH_KEY }}
           script: |
-            sudo systemctl restart myapp
+            sudo systemctl restart Sibylla
