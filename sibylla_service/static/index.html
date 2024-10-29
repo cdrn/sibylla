@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Real-Time Price Dashboard</title>
+</head>
+<body>
+    <h1>Arbitrage Dashboard</h1>
+    <div>binance latest trade: <span id="priceBinance">Loading...</span></div>
+    <div>kraken latest trade: <span id="priceKraken">Loading...</span></div>
+    <div>delta: <span id="delta">Loading...</span></div>
+
+    <script>
+        async function fetchData() {
+            const response = await fetch('/api/trades');
+            const data = await response.json();
+            document.getElementById('priceBinance').textContent = formatTradeData(data.binance[0]);
+            document.getElementById('priceKraken').textContent = formatTradeData(data.kraken[0]);
+            const deltaElement = document.getElementById('delta');
+            deltaElement.textContent = data.delta;
+            deltaElement.style.color = data.delta >= 0 ? 'green' : 'red';
+        }
+
+        function formatTradeData(trade) {
+            const tradeObj = JSON.parse(trade);
+            return `Exchange: ${tradeObj.Exchange}\nPair: ${tradeObj.Pair}\nPrice: ${tradeObj.Price}\nQuantity: ${tradeObj.Quantity}\nTimestamp: ${tradeObj.Timestamp}\nIsBuyerMaker: ${tradeObj.IsBuyerMaker}`;
+        }
+
+        setInterval(fetchData, 500);
+        fetchData(); // Initial call
+    </script>
+</body>
+</html>

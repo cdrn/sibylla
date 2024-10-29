@@ -45,8 +45,11 @@ func main() {
 	port := getEnv("PORT", "8080")
 
 	// ROUTES //
-	http.HandleFunc("/", homeHandler)
-	http.HandleFunc("/trades", tradesHandler(redisClient))
+	fs := http.FileServer(http.Dir("./static"))
+	http.Handle("/", fs)
+	http.HandleFunc("/api/trades", tradesHandler(redisClient))
+
+	// Websocket
 	http.HandleFunc("/ws", websocketHandler(redisClient))
 
 	// Initialize exchange listeners
@@ -143,9 +146,9 @@ func websocketHandler(redisClient *redisclient.RedisClient) http.HandlerFunc {
 			arbOpportunity := krakenPrice - binancePrice
 
 			response := map[string]interface{}{
-				"binance":        tradesBinance,
-				"kraken":         tradesKraken,
-				"arbOpportunity": arbOpportunity,
+				"binance": tradesBinance,
+				"kraken":  tradesKraken,
+				"spread":  arbOpportunity,
 			}
 
 			// Send the data to the client
