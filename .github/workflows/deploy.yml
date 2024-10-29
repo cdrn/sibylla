@@ -27,7 +27,7 @@ jobs:
         working-directory: sibylla_service
 
       - name: Build binary
-        run: GOOS=linux GOARCH=amd64 go build -o myapp
+        run: GOOS=linux GOARCH=amd64 go build -o sibylla
         working-directory: sibylla_service
 
       - name: Copy static files
@@ -55,4 +55,4 @@ jobs:
           username: ${{ secrets.DO_SSH_USER }}
           key: ${{ secrets.DO_SSH_KEY }}
           script: |
-            sudo systemctl restart Sibylla
+            sudo systemctl restart sibylla
