@@ -85,7 +85,7 @@ func ConnectKrakenWebSocket(config exchangeconfig.Config) {
 				}
 
 				// Push the trade struct into redis
-				err = config.RedisClient.PushToList("BTC/USD", trade, 100)
+				err = config.RedisClient.PushToList("trades:kraken:BTC/USD", trade, 100)
 				if err != nil {
 					log.Printf("Could not push trade to Redis: %v", err)
 				} else {

@@ -9,6 +9,10 @@ import (
 	"sibylla_service/pkg/exchange"
 	"sibylla_service/pkg/redisclient"
 
+	"encoding/json"
+
+	"sibylla_service/pkg/models"
+
 	"github.com/joho/godotenv"
 )
 
@@ -33,6 +37,7 @@ func main() {
 
 	// initialize routes and handlers
 	http.HandleFunc("/", homeHandler)
+	http.HandleFunc("/trades", tradesHandler(redisClient))
 
 	// Initialize exchange listeners
 	binanceConfig := exchangeconfig.Config{
@@ -60,6 +65,54 @@ func main() {
 // simple handler function
 func homeHandler(w http.ResponseWriter, r *http.Request) {
 	w.Write([]byte("Sibylla online"))
+}
+
+func tradesHandler(redisClient *redisclient.RedisClient) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		tradesBinance, err := redisClient.GetList("trades:binance:BTC/USDT", 1)
+		if err != nil || len(tradesBinance) == 0 {
+			log.Printf("No binance trades found")
+			tradesBinance = []string{"{\"Price\":0}"}
+		}
+
+		tradesKraken, err := redisClient.GetList("trades:kraken:BTC/USD", 1)
+		if err != nil || len(tradesKraken) == 0 {
+			log.Printf("No kraken trades found")
+			tradesKraken = []string{"{\"Price\":0}"}
+		}
+
+		binancePrice := parseTradePrice(tradesBinance[0])
+		krakenPrice := parseTradePrice(tradesKraken[0])
+
+		// Calculate arbitrage opportunity
+		arbOpportunity := binancePrice - krakenPrice
+
+		response := map[string]interface{}{
+			"binance":        tradesBinance,
+			"kraken":         tradesKraken,
+			"arbOpportunity": arbOpportunity,
+		}
+
+		responseJSON, err := json.Marshal(response)
+		if err != nil {
+			http.Error(w, "Failed to marshal response", http.StatusInternalServerError)
+			return
+		}
+
+		w.Header().Set("Content-Type", "application/json")
+		w.Write(responseJSON)
+	}
+}
+
+// Helper function to parse price from Trade data
+func parseTradePrice(trade string) float64 {
+	var tradeData models.Trade
+	err := json.Unmarshal([]byte(trade), &tradeData)
+	if err != nil {
+		log.Printf("Error parsing trade data: %v", err)
+		return 0.0
+	}
+	return tradeData.Price
 }
 
 // helper function to load env variables with a default

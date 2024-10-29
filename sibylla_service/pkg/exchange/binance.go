@@ -67,7 +67,7 @@ func ConnectBinanceWebSocket(config exchangeconfig.Config) {
 			}
 
 			// Push the trade struct into redis
-			err = config.RedisClient.PushToList("BTC/USDT", tradeData, 100)
+			err = config.RedisClient.PushToList("trades:binance:BTC/USDT", tradeData, 100)
 			if err != nil {
 				log.Printf("Could not push trade to Redis: %v", err)
 			} else {
