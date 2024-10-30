@@ -42,26 +42,6 @@ jobs:
         run: ls -R static_copy
         working-directory: sibylla_service
 
-      - name: Upload artifact
-        uses: actions/upload-artifact@v3
-        with:
-          name: sibylla_artifact
-          path: sibylla_service
-
-  deploy:
-    runs-on: ubuntu-latest
-    needs: ci_cd
-
-    steps:
-      - name: Download artifact
-        uses: actions/download-artifact@v3
-        with:
-          name: sibylla_artifact
-          path: sibylla_service
-
-      - name: List all files before SCP
-        run: ls -R sibylla_service
-
       - name: Add private key
         run: |
           mkdir -p ~/.ssh
@@ -69,23 +49,9 @@ jobs:
           chmod 600 ~/.ssh/id_rsa
 
       - name: Copy files to server
-        uses: appleboy/scp-action@master
-        with:
-          host: ${{ secrets.DO_DROPLET_IP }}
-          username: ${{ secrets.DO_SSH_USER }}
-          key_path: ~/.ssh/id_rsa
-          source: "sibylla_service/**"
-          target: "/root/"
-          port: 22
-          timeout: 30s
-          command_timeout: 1m
-          args: "-o StrictHostKeyChecking=no"
+        run: |
+          scp -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no -r sibylla_service/* root@${{ secrets.DO_DROPLET_IP }}:/root/
 
       - name: Restart service on Droplet
-        uses: appleboy/ssh-action@master
-        with:
-          host: ${{ secrets.DO_DROPLET_IP }}
-          username: ${{ secrets.DO_SSH_USER }}
-          key: ${{ secrets.DO_SSH_KEY }}
-          script: |
-            sudo systemctl restart sibylla
+        run: |
+          ssh -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no root@${{ secrets.DO_DROPLET_IP }} "sudo systemctl restart sibylla"
