@@ -30,8 +30,16 @@ jobs:
         run: GOOS=linux GOARCH=amd64 go build -o sibylla ./cmd/sibylla_service
         working-directory: sibylla_service
 
+      - name: List files before copy
+        run: ls -R
+        working-directory: sibylla_service
+
       - name: Copy static files
         run: mkdir -p static_copy && cp -r static/* static_copy/
+        working-directory: sibylla_service
+
+      - name: List files after copy
+        run: ls -R static_copy
         working-directory: sibylla_service
 
   deploy:
@@ -45,7 +53,7 @@ jobs:
           host: ${{ secrets.DO_DROPLET_IP }}
           username: ${{ secrets.DO_SSH_USER }}
           key: ${{ secrets.DO_SSH_KEY }}
-          source: "./sibylla_service/* ./sibylla_service/static/*"
+          source: "sibylla_service/**"
           target: "/root/"
           port: 22
           timeout: 30s
