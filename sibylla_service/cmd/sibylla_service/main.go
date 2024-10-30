@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"log"
 	"net/http"
 	"os"
@@ -36,9 +37,9 @@ func main() {
 
 	// REDIS CLIENT //
 	redisClient := redisclient.NewRedisClient(
-		"localhost:6379", // Redis address
-		"",               // no password by default
-		0,                // use default Redis database (DB 0)
+		fmt.Sprintf("%s:%s", getEnv("REDIS_HOST", ""), getEnv("REDIS_PORT", "")),
+		getEnv("REDIS_PASSWORD", ""), // no password by default
+		0,                            // use default Redis database (DB 0)
 	)
 
 	// ENVS //
