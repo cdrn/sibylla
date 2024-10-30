@@ -2,7 +2,9 @@ package redisclient
 
 import (
 	"context"
+	"crypto/tls"
 	"log"
+	"os"
 	"time"
 
 	"github.com/go-redis/redis/v8"
@@ -15,10 +17,19 @@ type RedisClient struct {
 }
 
 func NewRedisClient(addr, password string, db int) *RedisClient {
+	var tlsConfig *tls.Config
+	if os.Getenv("ENV") == "production" {
+		// Create a custom TLS configuration
+		tlsConfig = &tls.Config{
+			InsecureSkipVerify: true, // Set to false in production for better security
+		}
+	}
+
 	rdb := redis.NewClient(&redis.Options{
-		Addr:     addr,
-		Password: password,
-		DB:       db,
+		Addr:      addr,
+		Password:  password,
+		DB:        db,
+		TLSConfig: tlsConfig,
 	})
 
 	// Test the connection
