@@ -6,7 +6,7 @@ on:
       - master
 
 jobs:
-  build:
+  ci_cd:
     runs-on: ubuntu-latest
 
     steps:
@@ -42,11 +42,26 @@ jobs:
         run: ls -R static_copy
         working-directory: sibylla_service
 
+      - name: Upload artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: sibylla_artifact
+          path: sibylla_service
+
   deploy:
     runs-on: ubuntu-latest
-    needs: build
+    needs: ci_cd
 
     steps:
+      - name: Download artifact
+        uses: actions/download-artifact@v3
+        with:
+          name: sibylla_artifact
+          path: sibylla_service
+
+      - name: List all files before SCP
+        run: ls -R sibylla_service
+
       - name: Copy files to server
         uses: appleboy/scp-action@v0.0.4
         with:
