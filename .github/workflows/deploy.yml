@@ -62,18 +62,24 @@ jobs:
       - name: List all files before SCP
         run: ls -R sibylla_service
 
+      - name: Add private key
+        run: |
+          mkdir -p ~/.ssh
+          printf "%s" "${{ secrets.DO_SSH_KEY }}" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+
       - name: Copy files to server
-        uses: appleboy/scp-action@v0.0.4
+        uses: appleboy/scp-action@master
         with:
           host: ${{ secrets.DO_DROPLET_IP }}
           username: ${{ secrets.DO_SSH_USER }}
-          key: ${{ secrets.DO_SSH_KEY }}
+          key_path: ~/.ssh/id_rsa
           source: "sibylla_service/**"
           target: "/root/"
           port: 22
           timeout: 30s
           command_timeout: 1m
-          strip_components: 0
+          args: "-o StrictHostKeyChecking=no"
 
       - name: Restart service on Droplet
         uses: appleboy/ssh-action@master
