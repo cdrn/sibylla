@@ -64,7 +64,8 @@ func main() {
 		RedisClient:      redisClient,
 	}
 
-	go exchange.ConnectBinanceWebSocket(binanceConfig)
+	binancePairs := []string{"btcusdt", "ethusdt"}
+	go exchange.ConnectBinanceWebSocket(binanceConfig, binancePairs)
 	go exchange.ConnectKrakenWebSocket(krakenConfig)
 
 	// start server
@@ -83,7 +84,7 @@ func homeHandler(w http.ResponseWriter, r *http.Request) {
 
 func tradesHandler(redisClient *redisclient.RedisClient) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		tradesBinance, err := redisClient.GetList("trades:binance:BTC/USDT", 1)
+		tradesBinance, err := redisClient.GetList("trades:binance:BTCUSDT", 1)
 		if err != nil || len(tradesBinance) == 0 {
 			log.Printf("No binance trades found")
 			tradesBinance = []string{"{\"Price\":0}"}

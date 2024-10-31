@@ -9,21 +9,23 @@ import (
 	exchangeconfig "sibylla_service/pkg/config"
 	trade "sibylla_service/pkg/models"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/gorilla/websocket"
 )
 
-func ConnectBinanceWebSocket(config exchangeconfig.Config) {
+func ConnectBinanceWebSocket(config exchangeconfig.Config, pairs []string) {
 	for {
 		// Create a channel to receive OS signals
 		interrupt := make(chan os.Signal, 1)
 		// Notify the interrupt channel on receiving an interrupt signal
 		signal.Notify(interrupt, os.Interrupt)
 
-		// Define the WebSocket URL for Binance
-		// TODO: env var
-		u := url.URL{Scheme: "wss", Host: "stream.binance.com:9443", Path: "/ws/btcusdt@trade"}
+		// Define the WebSocket URL for Binance with multiple pairs
+		streams := strings.Join(pairs, "@trade/")
+		u := url.URL{Scheme: "wss", Host: "stream.binance.com:9443", Path: "/stream", RawQuery: "streams=" + streams + "@trade"}
+
 		log.Printf("connecting to %s", u.String())
 
 		// Connect to the WebSocket server
@@ -48,29 +50,30 @@ func ConnectBinanceWebSocket(config exchangeconfig.Config) {
 				}
 
 				// Unpack the trade message into the BinanceTrade struct
-				var binanceTrade trade.BinanceTrade
-				err = json.Unmarshal(message, &binanceTrade)
+				var binanceMessage trade.BinanceMessageMultistream
+				err = json.Unmarshal(message, &binanceMessage)
 				if err != nil {
 					log.Printf("Could not unmarshal trade message: %v", err)
 					continue
 				}
+				// log.Printf("btrade %s", message)
 
 				// Map BinanceTrade to the Trade struct
 				tradeData := trade.Trade{
 					Exchange:     "binance",
-					Pair:         binanceTrade.Symbol,
-					Price:        func() float64 { p, _ := strconv.ParseFloat(binanceTrade.Price, 64); return p }(),
-					Quantity:     func() float64 { q, _ := strconv.ParseFloat(binanceTrade.Quantity, 64); return q }(),
-					Timestamp:    binanceTrade.TradeTime,
-					IsBuyerMaker: binanceTrade.IsBuyerMaker,
+					Pair:         binanceMessage.Data.Symbol,
+					Price:        func() float64 { p, _ := strconv.ParseFloat(binanceMessage.Data.Price, 64); return p }(),
+					Quantity:     func() float64 { q, _ := strconv.ParseFloat(binanceMessage.Data.Quantity, 64); return q }(),
+					Timestamp:    binanceMessage.Data.TradeTime,
+					IsBuyerMaker: binanceMessage.Data.IsBuyerMaker,
 				}
 
 				// Push the trade struct into redis
-				err = config.RedisClient.PushToList("trades:binance:BTC/USDT", tradeData, 100)
+				err = config.RedisClient.PushToList("trades:binance:"+binanceMessage.Data.Symbol, tradeData, 100)
 				if err != nil {
 					log.Printf("Could not push trade to Redis: %v", err)
 				} else {
-					log.Printf("Binance trade pushed to redis")
+					log.Printf("Binance trade pushed to Redis for pair %s", tradeData.Pair)
 				}
 			}
 		}()

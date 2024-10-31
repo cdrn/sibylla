@@ -20,6 +20,18 @@ func (t Trade) MarshalBinary() ([]byte, error) {
 }
 
 // Binance incoming trade data
+//
+//	{
+//	  "e": "trade",       // Event type
+//	  "E": 1672515782136, // Event time
+//	  "s": "BNBBTC",      // Symbol
+//	  "t": 12345,         // Trade ID
+//	  "p": "0.001",       // Price
+//	  "q": "100",         // Quantity
+//	  "T": 1672515782136, // Trade time
+//	  "m": true,          // Is the buyer the market maker?
+//	  "M": true           // Ignore
+//	}
 type BinanceTrade struct {
 	Event        string `json:"e"`
 	EventTime    int64  `json:"E"`
@@ -30,6 +42,11 @@ type BinanceTrade struct {
 	TradeTime    int64  `json:"T"`
 	IsBuyerMaker bool   `json:"m"`
 	Ignore       bool   `json:"M"`
+}
+
+type BinanceMessageMultistream struct {
+	Stream string       `json:"stream"`
+	Data   BinanceTrade `json:"data"`
 }
 
 // Kraken incoming trade data
