@@ -1,9 +1,7 @@
 // sibylla_service/pkg/exchange/pair_mapping.go
 package exchange
 
-import (
-	"fmt"
-)
+import "fmt"
 
 // Define a map for each exchange's pair format
 var pairMappings = map[string]map[string]string{
@@ -27,7 +25,25 @@ func ConvertPair(bespokePair, exchange string) (string, error) {
 		if exchangePair, ok := exchangePairs[bespokePair]; ok {
 			return exchangePair, nil
 		}
-		return "", fmt.Errorf("pair %s not found for exchange %s", bespokePair, exchange)
+		return "", nil
 	}
 	return "", fmt.Errorf("exchange %s not supported", exchange)
+}
+
+// ConvertPairs converts a list of bespoke pair formats to the exchange-specific formats
+func ConvertPairs(bespokePairs []string, exchange string) ([]string, error) {
+	var convertedPairs []string
+	for _, pair := range bespokePairs {
+		convertedPair, err := ConvertPair(pair, exchange)
+		if err != nil {
+			return nil, err
+		}
+		// If missing a pair, log it and continue anyway
+		if convertedPair == "" {
+			fmt.Printf("Missing pair mapping for pair: %s, exchange: %s\n", pair, exchange)
+			continue
+		}
+		convertedPairs = append(convertedPairs, convertedPair)
+	}
+	return convertedPairs, nil
 }

@@ -14,7 +14,7 @@ import (
 	"github.com/gorilla/websocket"
 )
 
-func ConnectKrakenWebSocket(config exchangeconfig.Config) {
+func ConnectKrakenWebSocket(config exchangeconfig.Config, pairs []string) {
 	for {
 		// Create a channel to receive OS signals
 		interrupt := make(chan os.Signal, 1)
@@ -35,12 +35,12 @@ func ConnectKrakenWebSocket(config exchangeconfig.Config) {
 		// Create a channel to signal when the connection is done
 		done := make(chan struct{})
 
-		// Subscribe to the trade channel for MATIC/USD
+		// Subscribe to the trade channel for the provided pairs
 		subscribeMessage := map[string]interface{}{
 			"method": "subscribe",
 			"params": map[string]interface{}{
 				"channel":  "trade",
-				"symbol":   []string{"BTC/USD"},
+				"symbol":   pairs,
 				"snapshot": false,
 			},
 		}
@@ -84,7 +84,8 @@ func ConnectKrakenWebSocket(config exchangeconfig.Config) {
 					}
 
 					// Push the trade struct into redis
-					err = config.RedisClient.PushToList("trades:kraken:BTC/USD", trade, 100)
+					redisKey := "trades:kraken:" + tradeData.Symbol
+					err = config.RedisClient.PushToList(redisKey, trade, 100)
 					if err != nil {
 						log.Printf("Could not push trade to Redis: %v", err)
 					} else {

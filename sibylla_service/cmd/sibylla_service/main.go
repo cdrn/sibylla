@@ -63,8 +63,13 @@ func main() {
 	basePairs := []string{"btcusdt", "ethusdt"}
 
 	binancePairs := basePairs
+	krakenPairs, err := exchange.ConvertPairs(basePairs, "kraken")
+	if err != nil {
+		log.Fatalf("Failed to convert pairs for Kraken: %v", err)
+	}
+
 	go exchange.ConnectBinanceWebSocket(binanceConfig, binancePairs)
-	go exchange.ConnectKrakenWebSocket(krakenConfig)
+	go exchange.ConnectKrakenWebSocket(krakenConfig, krakenPairs)
 
 	// start server
 	log.Printf("Server starting on port %s", port)
