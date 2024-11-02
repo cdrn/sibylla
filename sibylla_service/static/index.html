@@ -16,13 +16,12 @@
     </style>
 </head>
 <body>
-    <h1>Arbitrage Dashboard</h1>
-    <h2>btc/USD(T)</h2>
-    <div>binance latest trade: <span id="priceBinance">Loading...</span></div>
+    <h1>Delta tracker</h1>
+    <div><span id="priceBinance">Loading...</span></div>
     <br>
-    <div>kraken latest trade: <span id="priceKraken">Loading...</span></div>
+    <div><span id="priceKraken">Loading...</span></div>
     <br>
-    <div>delta: <span id="delta">Loading...</span></div>
+    <div><span id="delta">Loading...</span></div>
 
     <script>
         async function fetchData() {
@@ -31,19 +30,26 @@
             updateElement('priceBinance', formatTradeData(data.binance[0]));
             updateElement('priceKraken', formatTradeData(data.kraken[0]));
             const deltaElement = document.getElementById('delta');
-            deltaElement.textContent = data.delta;
+            deltaElement.textContent = `Delta: ${data.delta.toFixed(2)}`;
             deltaElement.style.color = data.delta >= 0 ? 'green' : 'red';
         }
 
         function formatTradeData(trade) {
             const tradeObj = JSON.parse(trade);
-            return `Exchange: ${tradeObj.Exchange}\nPair: ${tradeObj.Pair}\nPrice: ${tradeObj.Price}\nQuantity: ${tradeObj.Quantity}\nTimestamp: ${tradeObj.Timestamp}\nIsBuyerMaker: ${tradeObj.IsBuyerMaker}`;
+            return `
+                Exchange: ${tradeObj.Exchange}<br>
+                Pair: ${tradeObj.Pair}<br>
+                Price: ${tradeObj.Price.toFixed(2)}<br>
+                Quantity: ${tradeObj.Quantity.toFixed(4)}<br>
+                Timestamp: ${new Date(tradeObj.Timestamp).toLocaleString()}<br>
+                Is Buyer Maker: ${tradeObj.IsBuyerMaker ? 'Yes' : 'No'}
+            `;
         }
 
         function updateElement(id, newValue) {
             const element = document.getElementById(id);
-            if (element.textContent !== newValue) {
-                element.textContent = newValue;
+            if (element.innerHTML !== newValue) {
+                element.innerHTML = newValue;
                 element.classList.add('flash');
                 setTimeout(() => {
                     element.classList.remove('flash');

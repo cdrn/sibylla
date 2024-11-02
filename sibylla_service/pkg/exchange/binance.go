@@ -33,7 +33,6 @@ func ConnectBinanceWebSocket(config exchangeconfig.Config, pairs []string) {
 		if err != nil {
 			log.Fatal("dial:", err)
 		}
-		defer c.Close() // Ensure the connection is closed when the function exits
 
 		// Create a channel to signal when the connection is done
 		done := make(chan struct{})
@@ -100,8 +99,10 @@ func ConnectBinanceWebSocket(config exchangeconfig.Config, pairs []string) {
 			case <-time.After(time.Hour): // Reset the connection every hour
 				log.Println("Resetting WebSocket connection for Binance")
 				c.Close()
-				return
+				goto reconnect
 			}
 		}
+	reconnect:
+		log.Println("Reconnecting to Binance WebSocket")
 	}
 }

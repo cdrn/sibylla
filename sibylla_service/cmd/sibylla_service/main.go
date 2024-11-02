@@ -14,8 +14,6 @@ import (
 
 	"sibylla_service/pkg/models"
 
-	"time"
-
 	"github.com/gorilla/websocket"
 	"github.com/joho/godotenv"
 )
@@ -50,9 +48,6 @@ func main() {
 	http.Handle("/", fs)
 	http.HandleFunc("/api/trades", tradesHandler(redisClient))
 
-	// Websocket
-	http.HandleFunc("/ws", websocketHandler(redisClient))
-
 	// Initialize exchange listeners
 	binanceConfig := exchangeconfig.Config{
 		ConnectionString: getEnv("BINANCE_WEBSOCKET_URL", ""),
@@ -64,7 +59,10 @@ func main() {
 		RedisClient:      redisClient,
 	}
 
-	binancePairs := []string{"btcusdt", "ethusdt"}
+	// Base pairs that we are watching
+	basePairs := []string{"btcusdt", "ethusdt"}
+
+	binancePairs := basePairs
 	go exchange.ConnectBinanceWebSocket(binanceConfig, binancePairs)
 	go exchange.ConnectKrakenWebSocket(krakenConfig)
 
@@ -116,53 +114,6 @@ func tradesHandler(redisClient *redisclient.RedisClient) http.HandlerFunc {
 
 		w.Header().Set("Content-Type", "application/json")
 		w.Write(responseJSON)
-	}
-}
-
-func websocketHandler(redisClient *redisclient.RedisClient) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		conn, err := upgrader.Upgrade(w, r, nil)
-		if err != nil {
-			log.Printf("Failed to upgrade connection: %v", err)
-			return
-		}
-		defer conn.Close()
-
-		for {
-			// Fetch the latest trade data
-			tradesBinance, err := redisClient.GetList("trades:binance:BTC/USDT", 1)
-			if err != nil || len(tradesBinance) == 0 {
-				log.Printf("No binance trades found")
-				tradesBinance = []string{"{\"Price\":0}"}
-			}
-
-			tradesKraken, err := redisClient.GetList("trades:kraken:BTC/USD", 1)
-			if err != nil || len(tradesKraken) == 0 {
-				log.Printf("No kraken trades found")
-				tradesKraken = []string{"{\"Price\":0}"}
-			}
-
-			binancePrice := parseTradePrice(tradesBinance[0])
-			krakenPrice := parseTradePrice(tradesKraken[0])
-
-			arbOpportunity := krakenPrice - binancePrice
-
-			response := map[string]interface{}{
-				"binance": tradesBinance,
-				"kraken":  tradesKraken,
-				"spread":  arbOpportunity,
-			}
-
-			// Send the data to the client
-			err = conn.WriteJSON(response)
-			if err != nil {
-				log.Printf("Error writing JSON to WebSocket: %v", err)
-				break
-			}
-
-			// Wait for a short period before sending the next update
-			time.Sleep(1 * time.Second)
-		}
 	}
 }
 

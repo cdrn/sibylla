@@ -116,8 +116,10 @@ func ConnectKrakenWebSocket(config exchangeconfig.Config) {
 			case <-time.After(time.Hour): // Reset the connection every hour
 				log.Println("Resetting WebSocket connection for Kraken")
 				c.Close()
-				return
+				goto reconnect
 			}
 		}
+	reconnect:
+		log.Println("Reconnecting to Kraken WebSocket")
 	}
 }
