@@ -6,11 +6,11 @@ import "fmt"
 // Define a map for each exchange's pair format
 var pairMappings = map[string]map[string]string{
 	"binance": {
-		"BTCUSD":  "BTCUSD",
-		"BTCUSDT": "BTCUSDT",
-		"ETHUSD":  "ETHUSD",
-		"ETHUSDT": "ETHUSDT",
-		"BNBBTC":  "BNBBTC",
+		"BTCUSD":  "btcusd",
+		"BTCUSDT": "btcusdt",
+		"ETHUSD":  "ethusd",
+		"ETHUSDT": "ethusdt",
+		"BNBBTC":  "bnbbtc",
 	},
 	"kraken": {
 		"BTCUSD": "BTC/USD",

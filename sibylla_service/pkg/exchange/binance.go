@@ -72,7 +72,7 @@ func ConnectBinanceWebSocket(config exchangeconfig.Config, pairs []string) {
 				if err != nil {
 					log.Printf("Could not push trade to Redis: %v", err)
 				} else {
-					log.Printf("Binance trade pushed to Redis for pair %s", tradeData.Pair)
+					// log.Printf("Binance trade pushed to Redis for pair %s", tradeData.Pair)
 				}
 			}
 		}()

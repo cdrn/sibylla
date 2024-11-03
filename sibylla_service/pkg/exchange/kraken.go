@@ -35,6 +35,8 @@ func ConnectKrakenWebSocket(config exchangeconfig.Config, pairs []string) {
 		// Create a channel to signal when the connection is done
 		done := make(chan struct{})
 
+		log.Printf("pairs: %s", pairs)
+
 		// Subscribe to the trade channel for the provided pairs
 		subscribeMessage := map[string]interface{}{
 			"method": "subscribe",
@@ -67,6 +69,7 @@ func ConnectKrakenWebSocket(config exchangeconfig.Config, pairs []string) {
 
 				// Unpack the trade message into the KrakenTrade struct
 				var krakenTrade trade.KrakenTradeMessage
+				log.Printf("message: %s", message)
 				err = json.Unmarshal(message, &krakenTrade)
 				if err != nil {
 					log.Printf("Could not unmarshal trade message: %v", err)
@@ -89,7 +92,7 @@ func ConnectKrakenWebSocket(config exchangeconfig.Config, pairs []string) {
 					if err != nil {
 						log.Printf("Could not push trade to Redis: %v", err)
 					} else {
-						log.Printf("Kraken trade added to redis")
+						log.Printf("Kraken trade pushed to redis for pair %s", tradeData.Symbol)
 					}
 				}
 			}
