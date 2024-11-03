@@ -76,10 +76,12 @@ func ConnectKrakenWebSocket(config exchangeconfig.Config, pairs []string) {
 					continue
 				}
 				for _, tradeData := range krakenTrade.Data {
+					pair, err := ConvertPairReverse(tradeData.Symbol, "kraken")
+
 					// Map KrakenTradeMessage data to the Trade struct
 					trade := trade.Trade{
 						Exchange:     "kraken",
-						Pair:         tradeData.Symbol,
+						Pair:         pair, // Map back to our language for pairs
 						Price:        tradeData.Price,
 						Quantity:     tradeData.Quantity,
 						Timestamp:    func() int64 { t, _ := strconv.ParseInt(tradeData.Timestamp, 10, 64); return t }(),
