@@ -8,11 +8,8 @@ import (
 
 	exchangeconfig "sibylla_service/pkg/config"
 	"sibylla_service/pkg/exchange"
+	handlers "sibylla_service/pkg/handlers"
 	"sibylla_service/pkg/redisclient"
-
-	"encoding/json"
-
-	"sibylla_service/pkg/models"
 
 	"github.com/gorilla/websocket"
 	"github.com/joho/godotenv"
@@ -46,7 +43,7 @@ func main() {
 	// ROUTES //
 	fs := http.FileServer(http.Dir("./static"))
 	http.Handle("/", fs)
-	http.HandleFunc("/api/trades", tradesHandler(redisClient))
+	http.HandleFunc("/api/trades", handlers.TradesHandler(redisClient))
 
 	// Initialize exchange listeners
 	binanceConfig := exchangeconfig.Config{
@@ -65,7 +62,7 @@ func main() {
 	// }
 
 	// Base pairs that we are watching
-	basePairs := []string{"BTCUSDT", "ETHUSDT", "BTCUSD", "ETHUSD"}
+	basePairs := []string{"BTCUSDT", "ETHUSDT", "BTCUSD", "ETHUSD", "WBTCUSDT"}
 
 	binancePairs, err := exchange.ConvertPairs(basePairs, "binance")
 	krakenPairs, err := exchange.ConvertPairs(basePairs, "kraken")
@@ -93,54 +90,6 @@ func main() {
 // simple handler function
 func homeHandler(w http.ResponseWriter, r *http.Request) {
 	w.Write([]byte("Sibylla online"))
-}
-
-func tradesHandler(redisClient *redisclient.RedisClient) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		tradesBinance, err := redisClient.GetList("trades:binance:BTCUSDT", 1)
-		if err != nil || len(tradesBinance) == 0 {
-			log.Printf("No binance trades found")
-			tradesBinance = []string{"{\"Price\":0}"}
-		}
-
-		tradesKraken, err := redisClient.GetList("trades:kraken:BTC/USD", 1)
-		if err != nil || len(tradesKraken) == 0 {
-			log.Printf("No kraken trades found")
-			tradesKraken = []string{"{\"Price\":0}"}
-		}
-
-		binancePrice := parseTradePrice(tradesBinance[0])
-		krakenPrice := parseTradePrice(tradesKraken[0])
-
-		// Calculate arbitrage opportunity
-		arbOpportunity := binancePrice - krakenPrice
-
-		response := map[string]interface{}{
-			"binance": tradesBinance,
-			"kraken":  tradesKraken,
-			"delta":   arbOpportunity,
-		}
-
-		responseJSON, err := json.Marshal(response)
-		if err != nil {
-			http.Error(w, "Failed to marshal response", http.StatusInternalServerError)
-			return
-		}
-
-		w.Header().Set("Content-Type", "application/json")
-		w.Write(responseJSON)
-	}
-}
-
-// Helper function to parse price from Trade data
-func parseTradePrice(trade string) float64 {
-	var tradeData models.Trade
-	err := json.Unmarshal([]byte(trade), &tradeData)
-	if err != nil {
-		log.Printf("Error parsing trade data: %v", err)
-		return 0.0
-	}
-	return tradeData.Price
 }
 
 // helper function to load env variables with a default

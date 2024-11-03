@@ -98,3 +98,13 @@ func (r *RedisClient) GetList(key string, maxLength int64) ([]string, error) {
 	}
 	return vals, nil
 }
+
+// Keys retrieves all keys matching the given pattern.
+func (r *RedisClient) Keys(pattern string) ([]string, error) {
+	keys, err := r.client.Keys(ctx, pattern).Result()
+	if err != nil {
+		log.Printf("Could not retrieve keys with pattern %s: %v", pattern, err)
+		return nil, err
+	}
+	return keys, nil
+}

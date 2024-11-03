@@ -17,9 +17,7 @@
 </head>
 <body>
     <h1>Delta tracker</h1>
-    <div><span id="priceBinance">Loading...</span></div>
-    <br>
-    <div><span id="priceKraken">Loading...</span></div>
+    <div id="pricesContainer">Loading...</div>
     <br>
     <div><span id="delta">Loading...</span></div>
 
@@ -27,22 +25,38 @@
         async function fetchData() {
             const response = await fetch('/api/trades');
             const data = await response.json();
-            updateElement('priceBinance', formatTradeData(data.binance[0]));
-            updateElement('priceKraken', formatTradeData(data.kraken[0]));
+            updatePrices(data);
             const deltaElement = document.getElementById('delta');
             deltaElement.textContent = `Delta: ${data.delta.toFixed(2)}`;
             deltaElement.style.color = data.delta >= 0 ? 'green' : 'red';
         }
 
+        function updatePrices(data) {
+            const pricesContainer = document.getElementById('pricesContainer');
+            pricesContainer.innerHTML = ''; // Clear previous content
+
+            for (const key in data) {
+                if (key.startsWith('trades:')) {
+                    const exchangePair = key.split(':').slice(1).join(':');
+                    const tradeData = data[key].trades;
+                    const formattedTradeData = formatTradeData(tradeData);
+                    const priceElement = document.createElement('div');
+                    priceElement.id = `price${exchangePair}`;
+                    priceElement.innerHTML = formattedTradeData;
+                    pricesContainer.appendChild(priceElement);
+                }
+            }
+        }
+
         function formatTradeData(trade) {
-            const tradeObj = JSON.parse(trade);
             return `
-                Exchange: ${tradeObj.Exchange}<br>
-                Pair: ${tradeObj.Pair}<br>
-                Price: ${tradeObj.Price.toFixed(2)}<br>
-                Quantity: ${tradeObj.Quantity.toFixed(4)}<br>
-                Timestamp: ${new Date(tradeObj.Timestamp).toLocaleString()}<br>
-                Is Buyer Maker: ${tradeObj.IsBuyerMaker ? 'Yes' : 'No'}
+            <br/>
+                Exchange: ${trade.Exchange}<br>
+                Pair: ${trade.Pair}<br>
+                Price: ${trade.Price.toFixed(2)}<br>
+                Quantity: ${trade.Quantity.toFixed(4)}<br>
+                Timestamp: ${new Date(trade.Timestamp).toLocaleString()}<br>
+                Is Buyer Maker: ${trade.IsBuyerMaker ? 'Yes' : 'No'}
             `;
         }
 
