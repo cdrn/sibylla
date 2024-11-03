@@ -63,3 +63,26 @@ type KrakenTradeMessage struct {
 		Timestamp string  `json:"timestamp"`
 	} `json:"data"`
 }
+
+// Coinbase incoming trade data
+type CoinbaseTrade struct {
+	TradeID   string `json:"trade_id"`
+	ProductID string `json:"product_id"`
+	Price     string `json:"price"`
+	Size      string `json:"size"`
+	Side      string `json:"side"`
+	Time      string `json:"time"`
+}
+
+type CoinbaseTradeEvent struct {
+	Type   string          `json:"type"`
+	Trades []CoinbaseTrade `json:"trades"`
+}
+
+type CoinbaseTradeMessage struct {
+	Channel     string               `json:"channel"`
+	ClientID    string               `json:"client_id"`
+	Timestamp   string               `json:"timestamp"`
+	SequenceNum int64                `json:"sequence_num"`
+	Events      []CoinbaseTradeEvent `json:"events"`
+}

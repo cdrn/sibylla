@@ -16,6 +16,10 @@ var pairMappings = map[string]map[string]string{
 		"BTCUSD": "BTC/USD",
 		"ETHUSD": "ETH/USD",
 	},
+	"coinbase": {
+		"BTCUSD": "BTC-USD",
+		"ETHUSD": "ETH-USD",
+	},
 	// Add more exchanges as needed
 }
 

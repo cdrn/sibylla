@@ -59,6 +59,11 @@ func main() {
 		RedisClient:      redisClient,
 	}
 
+	coinbaseConfig := exchangeconfig.Config{
+		ConnectionString: getEnv("COINBASE_WEBSOCKET_URL", ""),
+		RedisClient:      redisClient,
+	}
+
 	// Base pairs that we are watching
 	basePairs := []string{"btcusdt", "ethusdt"}
 
@@ -67,9 +72,14 @@ func main() {
 	if err != nil {
 		log.Fatalf("Failed to convert pairs for Kraken: %v", err)
 	}
+	coinbasePairs, err := exchange.ConvertPairs(basePairs, "coinbase")
+	if err != nil {
+		log.Fatalf("Failed to convert pairs for Coinbase: %v", err)
+	}
 
 	go exchange.ConnectBinanceWebSocket(binanceConfig, binancePairs)
 	go exchange.ConnectKrakenWebSocket(krakenConfig, krakenPairs)
+	go exchange.ConnectCoinbaseWebSocket(coinbaseConfig, coinbasePairs)
 
 	// start server
 	log.Printf("Server starting on port %s", port)
